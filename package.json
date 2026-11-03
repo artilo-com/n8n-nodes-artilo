@@ -1,0 +1,54 @@
+{
+  "name": "n8n-nodes-artilo",
+  "version": "0.1.0",
+  "scripts": {
+    "build": "n8n-node build",
+    "dev": "n8n-node dev",
+    "lint": "n8n-node lint",
+    "lint:fix": "n8n-node lint --fix",
+    "test": "n8n-node build && node --test 'test/*.test.js'"
+  },
+  "files": [
+    "dist"
+  ],
+  "n8n": {
+    "n8nNodesApiVersion": 1,
+    "strict": true,
+    "credentials": [
+      "dist/credentials/ArtiloApi.credentials.js"
+    ],
+    "nodes": [
+      "dist/nodes/Artilo/Artilo.node.js",
+      "dist/nodes/ArtiloTrigger/ArtiloTrigger.node.js"
+    ]
+  },
+  "devDependencies": {
+    "@n8n/node-cli": "0.53.1",
+    "eslint": "9.32.0",
+    "n8n-workflow": "2.44.1",
+    "prettier": "3.6.2",
+    "typescript": "5.9.2"
+  },
+  "peerDependencies": {
+    "n8n-workflow": "*"
+  },
+  "description": "n8n nodes for Artilo CRM: lead and deal triggers, and Find, Create and Update Lead",
+  "license": "MIT",
+  "homepage": "https://github.com/OnlineJustice-com/n8n-nodes-artilo#readme",
+  "keywords": [
+    "n8n-community-node-package",
+    "artilo",
+    "crm"
+  ],
+  "author": {
+    "name": "Artilo",
+    "email": "nadav.v@artilo.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/OnlineJustice-com/n8n-nodes-artilo.git"
+  },
+  "bugs": {
+    "url": "https://github.com/OnlineJustice-com/n8n-nodes-artilo/issues"
+  }
+}

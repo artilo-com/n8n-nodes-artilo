@@ -1,0 +1,137 @@
+{
+  "name": "Artilo: Find Lead, then Update Lead",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "lead-qualified",
+        "authentication": "headerAuth",
+        "options": {}
+      },
+      "id": "6be4b3dd-8ca7-45cf-8dde-0580b549e87f",
+      "name": "Qualification result",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "lead",
+        "operation": "find",
+        "searchBy": "email",
+        "value": "={{ $json.body.email }}"
+      },
+      "id": "a56d84e9-4e3b-46db-9752-08c5d8fae66f",
+      "name": "Find Lead",
+      "type": "n8n-nodes-artilo.artilo",
+      "typeVersion": 1,
+      "position": [
+        260,
+        0
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "6d1acdb3-b417-40f0-b434-96e44406cdce",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "919457c1-7f52-4289-adcf-01ac7b2d1817",
+      "name": "Lead found?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        520,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "lead",
+        "operation": "update",
+        "leadId": "={{ $json.id }}",
+        "requestId": "={{ 'qualification-' + $('Qualification result').item.json.body.qualificationId }}",
+        "fields": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "status_id": "={{ $('Qualification result').item.json.body.statusId }}"
+          },
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "id": "caab0f30-4232-421b-97ac-97221a6fa21d",
+      "name": "Update Lead",
+      "type": "n8n-nodes-artilo.artilo",
+      "typeVersion": 1,
+      "position": [
+        780,
+        -100
+      ]
+    }
+  ],
+  "connections": {
+    "Qualification result": {
+      "main": [
+        [
+          {
+            "node": "Find Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Lead": {
+      "main": [
+        [
+          {
+            "node": "Lead found?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lead found?": {
+      "main": [
+        [
+          {
+            "node": "Update Lead",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

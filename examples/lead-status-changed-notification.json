@@ -1,0 +1,53 @@
+{
+  "name": "Artilo: Lead Status Changed to a chat notification",
+  "nodes": [
+    {
+      "parameters": {
+        "event": "lead_status_changed",
+        "statusId": ""
+      },
+      "id": "2f3a38ac-ed95-4d74-81e1-d947832c47f6",
+      "name": "Lead status changed",
+      "type": "n8n-nodes-artilo.artiloTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://hooks.slack.com/services/REPLACE/WITH/YOURS",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ text: $json.first_name + ' ' + ($json.last_name || '') + ' moved from ' + ($json.previous_status_name || 'no status') + ' to ' + $json.status_name + ': ' + $json.record_url }) }}",
+        "options": {}
+      },
+      "id": "76545a60-9d53-4321-b865-b5b8e7ed7036",
+      "name": "Post to chat",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        260,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Lead status changed": {
+      "main": [
+        [
+          {
+            "node": "Post to chat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

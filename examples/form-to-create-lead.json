@@ -1,0 +1,83 @@
+{
+  "name": "Artilo: form submission to Create Lead",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Contact us",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "First Name",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Last Name"
+            },
+            {
+              "fieldLabel": "Email",
+              "fieldType": "email",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Phone"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "debc463e-a61f-4b84-9ad1-2238ab37ab4b",
+      "name": "Contact form",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "lead",
+        "operation": "create",
+        "requestId": "={{ 'form-' + $json.submittedAt + '-' + $json.Email }}",
+        "fields": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "first_name": "={{ $json['First Name'] }}",
+            "last_name": "={{ $json['Last Name'] }}",
+            "email": "={{ $json.Email }}",
+            "phone": "={{ $json.Phone }}",
+            "source": "Website form"
+          },
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "id": "a8730975-89a0-4c76-a551-513c9f9d3ef2",
+      "name": "Create Lead",
+      "type": "n8n-nodes-artilo.artilo",
+      "typeVersion": 1,
+      "position": [
+        260,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Contact form": {
+      "main": [
+        [
+          {
+            "node": "Create Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

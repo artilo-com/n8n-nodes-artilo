@@ -25,7 +25,6 @@ jobs:
         with:
           node-version: '24'
           registry-url: 'https://registry.npmjs.org'
-          cache: 'npm'
 
       - name: Check the tag matches package.json
         run: |
@@ -44,5 +43,9 @@ jobs:
       - name: Build and test
         run: npm test
 
+      # A pre-release goes to the next dist-tag so installs keep getting the
+      # last stable version.
       - name: Publish
-        run: npm publish --provenance --access public
+        run: npm publish --provenance --access public --tag "$DIST_TAG"
+        env:
+          DIST_TAG: ${{ github.event.release.prerelease && 'next' || 'latest' }}

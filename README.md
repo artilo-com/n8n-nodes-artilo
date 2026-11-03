@@ -26,8 +26,7 @@ How it works:
 
 ### Before you start
 
-- **n8n version.** _To be confirmed with Engineering before the pilot._
-- **Installing.** On self-hosted n8n, an n8n admin installs the package under Settings > Community Nodes > Install, with the name `n8n-nodes-artilo`. _n8n Cloud only offers community nodes that n8n has verified; confirm availability before promising Cloud to a customer._
+- **Installing.** On self-hosted n8n, an n8n admin installs the package under Settings > Community Nodes > Install, with the name `n8n-nodes-artilo`. On n8n Cloud, the node is available once n8n has verified it.
 - **A public webhook URL (self-hosted only).** Artilo sends trigger events to your n8n over the internet, so your n8n must be reachable at a public HTTPS address. Behind a reverse proxy, set `N8N_WEBHOOK_URL` (`WEBHOOK_URL` before n8n 2.35) to your public address, as described in [n8n's webhook URL setup](https://docs.n8n.io/hosting/configuration/configuration-examples/webhook-url/). Artilo refuses private and internal addresses.
 
 ### Connecting
@@ -88,4 +87,6 @@ To try it against a local backend, create a credential with the Artilo URL `http
 Releases are published to npm by the `Publish` workflow (`.github/workflows/publish.yml`) through npm trusted publishing, so every version carries npm provenance and no npm token is stored in the repository.
 
 1. Bump `version` in `package.json` (and `package-lock.json`, with `npm version <x.y.z> --no-git-tag-version`) and merge it to `main`.
-2. Create a GitHub release with the tag `v<x.y.z>`, matching `package.json`. Publishing the release runs the workflow, which lints, tests, builds and publishes.
+2. Create a GitHub release with the tag `v<x.y.z>`, matching `package.json`. Publishing the release runs the workflow, which lints, tests, builds and publishes. A release marked as a pre-release is published under the `next` dist-tag, so `latest` keeps pointing at the last stable version.
+
+npm only lets a repository become a package's trusted publisher once the package exists, so `0.1.0` was published by hand, without provenance. The first release from this workflow is therefore `0.1.1`, and that is the version to submit for n8n verification, which expects provenance.

@@ -1,6 +1,6 @@
 {
   "name": "n8n-nodes-artilo",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "scripts": {
     "build": "n8n-node build",
     "dev": "n8n-node dev",
@@ -32,7 +32,7 @@
   "peerDependencies": {
     "n8n-workflow": "*"
   },
-  "description": "n8n nodes for Artilo CRM: lead and deal triggers, and Find, Create and Update Lead",
+  "description": "n8n nodes for Artilo CRM: lead, client and deal triggers, and Find, Create and Update for leads, clients, companies and deals",
   "license": "MIT",
   "homepage": "https://github.com/OnlineJustice-com/n8n-nodes-artilo#readme",
   "keywords": [

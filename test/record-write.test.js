@@ -1,10 +1,10 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { buildLeadWriteBody } = require('../dist/nodes/shared/lead-write');
+const { buildWriteBody } = require('../dist/nodes/shared/record-write');
 
 test('sends only the mapped values, keeping 0 and false', () => {
 	assert.deepEqual(
-		buildLeadWriteBody(' form-12 ', {
+		buildWriteBody(' form-12 ', {
 			first_name: 'Jane',
 			last_name: '',
 			phone: '   ',
@@ -18,9 +18,9 @@ test('sends only the mapped values, keeping 0 and false', () => {
 });
 
 test('stops before calling Artilo when the Request ID is empty', () => {
-	assert.equal(buildLeadWriteBody('  ', { first_name: 'Jane' }), null);
+	assert.equal(buildWriteBody('  ', { first_name: 'Jane' }), null);
 });
 
 test('reads no mapped fields as no values', () => {
-	assert.deepEqual(buildLeadWriteBody('form-12', null), { requestId: 'form-12', values: {} });
+	assert.deepEqual(buildWriteBody('form-12', null), { requestId: 'form-12', values: {} });
 });

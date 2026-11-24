@@ -1,6 +1,6 @@
 {
   "name": "n8n-nodes-artilo",
-  "version": "0.2.0",
+  "version": "0.2.0-beta.0",
   "scripts": {
     "build": "n8n-node build",
     "dev": "n8n-node dev",

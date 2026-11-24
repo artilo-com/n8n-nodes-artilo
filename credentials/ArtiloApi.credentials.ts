@@ -20,7 +20,7 @@ export class ArtiloApi implements ICredentialType {
 	};
 
 	documentationUrl =
-		'https://github.com/OnlineJustice-com/n8n-nodes-artilo#connecting';
+		'https://github.com/artilo-com/n8n-nodes-artilo#connecting';
 
 	properties: INodeProperties[] = [
 		{

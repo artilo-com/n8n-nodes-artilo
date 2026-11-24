@@ -23,25 +23,25 @@ const SIGNATURE_REFUSALS = {
 	expired: 'Signature too old',
 } as const;
 
-const NO_RAW_BODY =
-	'The raw request body is not available, so the signature cannot be checked';
+const NO_RAW_BODY = 'The raw request body is not available, so the signature cannot be checked';
 
+/** Artilo's `{ id, label }` choices, after an "Any" option when one is given. */
 async function loadChoices(
 	this: ILoadOptionsFunctions,
 	path: string,
-	anyLabel: string,
+	anyLabel?: string,
 ): Promise<INodePropertyOptions[]> {
 	const response = await artiloRequest.call(this, { method: 'GET', path });
 	const choices = Array.isArray(response.body)
 		? (response.body as Array<{ id: string; label: string }>)
 		: [];
 	return [
-		{ name: anyLabel, value: '' },
+		...(anyLabel ? [{ name: anyLabel, value: '' }] : []),
 		...choices.map((choice) => ({ name: choice.label, value: choice.id })),
 	];
 }
 
-/** The status or stage the subscription is filtered on, or nothing. */
+/** The status, stage or lead field the subscription is filtered on, or nothing. */
 function filterOf(this: IHookFunctions, event: string): IDataObject {
 	if (event === 'lead_status_changed') {
 		const statusId = this.getNodeParameter('statusId', '') as string;
@@ -50,6 +50,11 @@ function filterOf(this: IHookFunctions, event: string): IDataObject {
 	if (event === 'deal_stage_changed') {
 		const stage = this.getNodeParameter('stage', '') as string;
 		return stage ? { stage } : {};
+	}
+	if (event === 'lead_field_changed') {
+		// Required: Artilo refuses the subscription without it, with a message saying so
+		const field = this.getNodeParameter('field', '') as string;
+		return field ? { field } : {};
 	}
 	return {};
 }
@@ -87,7 +92,7 @@ export class ArtiloTrigger implements INodeType {
 		group: ['trigger'],
 		version: 1,
 		subtitle: '={{$parameter["event"]}}',
-		description: 'Starts the workflow when a lead or deal changes in Artilo',
+		description: 'Starts the workflow when a lead, client or deal changes in Artilo',
 		defaults: { name: 'Artilo Trigger' },
 		inputs: [],
 		outputs: [NodeConnectionTypes.Main],
@@ -114,9 +119,24 @@ export class ArtiloTrigger implements INodeType {
 						description: 'A deal moves to another stage',
 					},
 					{
+						name: 'Lead Converted',
+						value: 'lead_converted',
+						description: 'A lead is converted into a client',
+					},
+					{
+						name: 'Lead Field Changed',
+						value: 'lead_field_changed',
+						description: 'The saved value of one lead field you pick changes',
+					},
+					{
 						name: 'Lead Status Changed',
 						value: 'lead_status_changed',
 						description: 'A lead moves to another status, by hand or by an Artilo workflow',
+					},
+					{
+						name: 'New Client',
+						value: 'new_client',
+						description: 'A client is created in Artilo, not by converting a lead',
 					},
 					{ name: 'New Deal', value: 'new_deal', description: 'A deal is created' },
 					{ name: 'New Lead', value: 'new_lead', description: 'A lead is created' },
@@ -132,6 +152,17 @@ export class ArtiloTrigger implements INodeType {
 				displayOptions: { show: { event: ['lead_status_changed'] } },
 				description:
 					'Only start when a lead moves into this status. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+			},
+			{
+				displayName: 'Field Name or ID',
+				name: 'field',
+				type: 'options',
+				typeOptions: { loadOptionsMethod: 'getWatchableLeadFields' },
+				required: true,
+				default: '',
+				displayOptions: { show: { event: ['lead_field_changed'] } },
+				description:
+					'The one lead field to watch. Only a change to its saved value starts the workflow. Renaming the field in Artilo keeps it. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
 			},
 			{
 				displayName: 'Stage Name or ID',
@@ -153,6 +184,9 @@ export class ArtiloTrigger implements INodeType {
 			},
 			async getDealStages(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 				return loadChoices.call(this, '/deals/stages', 'Any Stage');
+			},
+			async getWatchableLeadFields(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+				return loadChoices.call(this, '/leads/watchable-fields');
 			},
 		},
 	};

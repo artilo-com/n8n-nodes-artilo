@@ -4,7 +4,7 @@
 	"codexVersion": "1.0",
 	"categories": ["Sales"],
 	"resources": {
-		"credentialDocumentation": [{ "url": "https://github.com/OnlineJustice-com/n8n-nodes-artilo#connecting" }],
-		"primaryDocumentation": [{ "url": "https://github.com/OnlineJustice-com/n8n-nodes-artilo#readme" }]
+		"credentialDocumentation": [{ "url": "https://github.com/artilo-com/n8n-nodes-artilo#connecting" }],
+		"primaryDocumentation": [{ "url": "https://github.com/artilo-com/n8n-nodes-artilo#readme" }]
 	}
 }

@@ -1,7 +1,7 @@
 import type { FieldType, ResourceMapperField } from 'n8n-workflow';
 
-/** A lead field as `GET /leads/fields` describes it. */
-export interface ArtiloLeadField {
+/** A field as `GET /<resource>/fields` describes it, for leads, clients, companies and deals. */
+export interface ArtiloField {
 	key: string;
 	label: string;
 	type: string;
@@ -19,11 +19,11 @@ const N8N_TYPES: Record<string, FieldType> = {
 };
 
 /**
- * A writable lead field in the mapping form. Its id is Artilo's stable key
+ * A writable field in the mapping form. Its id is Artilo's stable key
  * (`first_name`, `custom_<definitionId>`), so renaming a field in Artilo never
  * breaks a mapping. Owners, statuses and select options are dropdowns.
  */
-export const toMappingField = (field: ArtiloLeadField): ResourceMapperField => {
+export const toMappingField = (field: ArtiloField): ResourceMapperField => {
 	const choices = Array.isArray(field.choices) ? field.choices : null;
 	return {
 		id: field.key,
@@ -39,5 +39,5 @@ export const toMappingField = (field: ArtiloLeadField): ResourceMapperField => {
 	};
 };
 
-export const toMappingFields = (fields: ArtiloLeadField[]): ResourceMapperField[] =>
+export const toMappingFields = (fields: ArtiloField[]): ResourceMapperField[] =>
 	fields.filter((field) => !field.readOnly).map(toMappingField);

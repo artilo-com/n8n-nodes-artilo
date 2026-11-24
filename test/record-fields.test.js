@@ -1,6 +1,6 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { toMappingFields } = require('../dist/nodes/shared/lead-fields');
+const { toMappingFields } = require('../dist/nodes/shared/record-fields');
 
 test('maps writable fields by their stable key, with dropdowns for choices', () => {
 	const fields = toMappingFields([

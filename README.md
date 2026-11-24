@@ -2,24 +2,36 @@
 
 The n8n community node package for [Artilo](https://artilo.com) CRM (`n8n-nodes-artilo` on npm). It talks to Artilo's integration API, under `/api/v1/integrations/connectors`, authenticated with an Artilo key created for n8n.
 
-| Node | Operation | What it does | Backend route |
-| --- | --- | --- | --- |
-| Credential | Artilo API | Key and Artilo URL, tested against `/me` | `GET /me` |
-| Artilo Trigger | New Lead | A lead is created | `POST /subscriptions`, then signed events |
-| Artilo Trigger | Lead Status Changed | A lead moves to another status, optionally into one status | same |
-| Artilo Trigger | New Deal | A deal is created | same |
-| Artilo Trigger | Deal Stage Changed | A deal moves to another stage, optionally into one stage | same |
-| Artilo | Lead: Find | Finds a lead by Artilo ID or email. Never creates | `GET /leads/search` |
-| Artilo | Lead: Create | Creates a lead | `POST /leads` |
-| Artilo | Lead: Update | Updates a lead by Artilo ID | `PATCH /leads/:id` |
+| Node           | Operation           | What it does                                                                    | Backend route                                                      |
+| -------------- | ------------------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| Credential     | Artilo API          | Key and Artilo URL, tested against `/me`                                        | `GET /me`                                                          |
+| Artilo Trigger | New Lead            | A lead is created                                                               | `POST /subscriptions`, then signed events                          |
+| Artilo Trigger | Lead Status Changed | A lead moves to another status, optionally into one status                      | same                                                               |
+| Artilo Trigger | New Deal            | A deal is created                                                               | same                                                               |
+| Artilo Trigger | Deal Stage Changed  | A deal moves to another stage, optionally into one stage                        | same                                                               |
+| Artilo Trigger | New Client          | A client is created in Artilo (not by converting a lead)                        | same                                                               |
+| Artilo Trigger | Lead Converted      | A lead is converted into a client                                               | same                                                               |
+| Artilo Trigger | Lead Field Changed  | The saved value of one picked lead field changes                                | same, fields from `GET /leads/watchable-fields`                    |
+| Artilo         | Lead: Find          | Finds a lead by Artilo ID or email. Never creates                               | `GET /leads/search`                                                |
+| Artilo         | Lead: Create        | Creates a lead                                                                  | `POST /leads`                                                      |
+| Artilo         | Lead: Update        | Updates a lead by Artilo ID                                                     | `PATCH /leads/:id`                                                 |
+| Artilo         | Client: Find        | Finds a client by Artilo ID or email. Never creates                             | `GET /clients/search`                                              |
+| Artilo         | Client: Create      | Creates a client, optionally in a company                                       | `POST /clients`                                                    |
+| Artilo         | Client: Update      | Updates a client by Artilo ID                                                   | `PATCH /clients/:id`                                               |
+| Artilo         | Company: Find       | Finds a company by country and registration number, or Artilo ID. Never creates | `GET /companies/search`                                            |
+| Artilo         | Company: Create     | Creates a company                                                               | `POST /companies`                                                  |
+| Artilo         | Company: Update     | Updates a company by Artilo ID                                                  | `PATCH /companies/:id`                                             |
+| Artilo         | Deal: Find          | Finds a deal by Artilo ID. Never creates                                        | `GET /deals/search`                                                |
+| Artilo         | Deal: Create        | Creates an open deal for a client, with its product lines                       | `POST /deals`, products from `GET /products/choices`, 50 at a time |
+| Artilo         | Deal: Update        | Updates a deal by Artilo ID                                                     | `PATCH /deals/:id`                                                 |
 
 How it works:
 
 - **Webhooks are managed for you.** Publishing a workflow with the Artilo Trigger subscribes its production webhook URL with Artilo, and unpublishing ends it. Publishing always subscribes again (Artilo returns the same subscription with a new secret), which also recovers one Artilo ended; an n8n restart keeps the stored subscription instead, so its secret never changes while events are arriving. Changing the event and publishing ends the old subscription. "Listen for test event" subscribes the separate test URL with its own static data, so testing never changes the live subscription. Each subscription is stored in the workflow's static data, by URL.
 - **Every event is signed.** Artilo returns a secret per subscription and signs each event with `X-Artilo-Signature: t=<unix seconds>,v1=<hex HMAC-SHA256 of "<t>.<raw body>">`. The trigger checks it against the raw body before the workflow runs, and answers 401 to an event with a missing or wrong signature, or one signed more than 5 minutes ago.
-- **Lead fields are dynamic.** Create and Update read `GET /leads/fields?action=create|update`, so custom fields show up without a new package version. Field ids are Artilo's stable keys (`first_name`, `custom_<definitionId>`), so renaming a field in Artilo never breaks a mapping. Owners, statuses and select options are dropdowns. Read-only fields are not offered.
-- **Writes are idempotent.** Every write sends `{ requestId, values }`. Only non-blank values are sent; 0 and `false` are kept. Artilo answers 201 for a new lead and 200 when the same Request ID with the same values returns the lead already saved. An empty Request ID, Lead ID or search value stops the item before Artilo is called.
-- **Money is converted.** Deal events carry `total_value` in the currency's minor units; the trigger turns it into a decimal (`12500.5` for USD 12,500.50), as the Zapier app does.
+- **Fields are dynamic.** Create and Update read `GET /<leads|clients|companies|deals>/fields?action=create|update`, so custom fields show up without a new package version. Field ids are Artilo's stable keys (`first_name`, `custom_<definitionId>`), so renaming a field in Artilo never breaks a mapping. Owners, statuses and select options are dropdowns. Read-only fields are not offered.
+- **Writes are idempotent.** Every write sends `{ requestId, values }`. Only non-blank values are sent; 0 and `false` are kept. Artilo answers 201 for a new record and 200 when the same Request ID with the same values returns the record already saved. An empty Request ID, record ID or search value stops the item before Artilo is called.
+- **Money is converted.** Deals carry `total_value` in the currency's minor units; deal events and the deals Find, Create and Update return have it as a decimal (`12500.5` for USD 12,500.50), as the Zapier app does. Product line prices and discounts are sent in minor units, as Artilo stores them.
 - **Errors** carry Artilo's own message, which says what to fix (a missing required field, an inactive owner, several leads with one email). 429 and 5xx ask to try again; turn on the node's Retry On Fail setting to retry automatically.
 
 ## Setup guide
@@ -39,13 +51,13 @@ The key acts as the user who created it: workflows see and change only what that
 
 ### Triggers
 
-Pick the event on the Artilo Trigger. For Lead Status Changed and Deal Stage Changed you can pick one status or stage, or leave **Any**.
+Pick the event on the Artilo Trigger. For Lead Status Changed and Deal Stage Changed you can pick one status or stage, or leave **Any**. Lead Field Changed needs one lead field: only a change to its saved value starts the workflow, and renaming the field in Artilo keeps it. If the field is deleted, Artilo ends the subscription: pick another field and publish again.
 
 - Creating a lead starts New Lead only, not Lead Status Changed; creating a deal starts New Deal only. Saving the same status or stage again starts nothing. A to B and back to A starts it twice.
 - Lead Status Changed includes changes made by hand and by Artilo workflows.
-- Imports, bulk changes and restores do not start workflows. A lead converted to a client does not start New Lead.
+- Imports, bulk changes and restores do not start workflows. Converting a lead starts Lead Converted only, not New Client or New Lead. Lead Converted carries the new client, and `lead_id` names the converted lead for reference only: the lead no longer exists, so Find Lead never returns it.
 - Events from before the workflow was published, or while it was unpublished, are never sent.
-- An event carries `event_id`, `event_time`, `record_id` (the lead or deal), the record's fields with their current status or stage, and for a change the previous one (`previous_status_id` and `previous_status_name`, or `previous_stage` and `previous_stage_name`). Test and live events have the same fields.
+- An event carries `event_id`, `event_time`, `record_id` (the lead, client or deal) and the record's fields. A status or stage change adds the previous one (`previous_status_id` and `previous_status_name`, or `previous_stage` and `previous_stage_name`). Lead Field Changed adds `field_key`, `field_label`, `previous_value` and `new_value`, and Lead Converted adds `lead_id`. Test and live events have the same fields.
 - **Changes made through Zapier or n8n never start a Zapier or n8n workflow**, and neither do the Artilo workflow changes that follow them, even delayed ones. This stops two workflows from setting each other off. Put follow-up steps in the workflow that made the change instead of waiting for a second trigger.
 - Artilo retries an event when your n8n can't be reached, times out, or answers 408, 429 or a 5xx error, so a workflow can rarely receive the same event twice. Any other answer, for example a 404 after the workflow was unpublished, is final. If repeating a later step would hurt, check `event_id` first (for example with n8n's Remove Duplicates node).
 - Picking a status that no longer exists in Artilo fails with an error when the workflow is published. If the status or stage a published trigger filters on is deleted later, Artilo ends that subscription and the workflow stops receiving events: pick another one and publish the workflow again.
@@ -57,6 +69,10 @@ Pick the event on the Artilo Trigger. For Lead Status Changed and Deal Stage Cha
 - **Create Lead** always creates a new lead; it never updates another one.
 - **Update Lead** changes only the fields you map, on the lead with that Artilo ID. A blank value keeps what the lead holds (clearing a field is not supported). Saving values the lead already has records nothing and runs no automation.
 - **Request ID** is required on Create and Update. Map a stable ID of what the write comes from, such as the form submission or order ID, never a timestamp or a random value. When a run is retried or rerun, the same Request ID returns what Artilo already saved instead of writing twice. Two different submissions need two different Request IDs, even for the same email.
+- **Find Client, Find Company and Find Deal** work the same way. Find Client matches email like Find Lead, and stops with Artilo's message when several clients share it. Find Company takes an ISO country code (any case) and the registration number, which matches exactly, spaces included. Find Deal takes only the Artilo ID.
+- **Create and Update Client, Company and Deal** follow the same rules as the lead ones. A client or a deal can be put in a company by mapping its Company ID; an archived company can't be edited or linked. Deal updates follow Artilo's edit restrictions, as in the app.
+- **Product Lines** on Create Deal pick an active product (or map its ID), with a quantity (1 by default), a unit price in cents (blank uses the product's price) and an optional flat or percentage discount. The lines are saved with the deal or not at all.
+- **Older keys.** A key keeps the access it had when it was created. Keys created before Artilo added the client, company and deal operations can still use the Lead operations, Find Deal, and the New Lead, Lead Status Changed, Lead Field Changed and deal triggers. The Client and Company operations, Create and Update Deal, New Client and Lead Converted need a newer key: with an older one, Artilo answers "This key does not allow this action." Create a new n8n key in Artilo and update the credential.
 - **Testing Create or Update writes real data** to Artilo and can run your Artilo automations. Find and the trigger never change anything.
 - Each input item is its own request: one item failing does not undo the others. Turn on Continue On Fail to keep going past a failed item.
 
